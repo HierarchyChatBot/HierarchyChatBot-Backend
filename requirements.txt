@@ -1,2 +1,6 @@
 Flask
 Flask-CORS
+langchain
+langchain-community
+langchain-core
+httpx

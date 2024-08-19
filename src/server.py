@@ -1,7 +1,9 @@
 # server.py
 
-from flask import Flask, Response, stream_with_context, request, jsonify
+from flask import Flask, request, jsonify
 from flask_cors import CORS
+from llm import ChatBot
+from flask import Flask, Response, stream_with_context, request, jsonify
 import os
 from ServerTee import ServerTee
 from thread_handler import ThreadHandler
@@ -9,7 +11,19 @@ from WorkFlow import run_workflow_as_server
 from FileTransmit import file_transmit_bp  # Import the Blueprint
 
 app = Flask(__name__)
-CORS(app)  # This will enable CORS for all routes
+CORS(app)  # Enable CORS for all routes
+
+@app.route('/process-string', methods=['POST'])
+def process_string():
+    # Get the JSON data from the request
+    data = request.json
+    input_string = data.get('input_string', '')
+
+    # Process the string
+    result = ChatBot(input_string)
+
+    # Return the result as JSON
+    return jsonify({'result': result})
 
 app.register_blueprint(file_transmit_bp)  # Register the Blueprint
 
@@ -55,4 +69,4 @@ def check_status():
     return jsonify({"running": running}), 200
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(debug=True, port=5030)  # Specify the port number here

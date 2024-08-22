@@ -5,6 +5,7 @@ import os
 import zipfile
 import io
 from datetime import datetime
+import json
 
 file_transmit_bp = Blueprint('file_transmit', __name__)
 
@@ -13,6 +14,7 @@ WORKSPACE_FOLDER = './'
 if not os.path.exists(WORKSPACE_FOLDER):
     os.makedirs(WORKSPACE_FOLDER)
 
+# Route to handle file uploads
 @file_transmit_bp.route('/upload', methods=['POST'])
 def upload_file():
     if 'files' not in request.files:
@@ -28,6 +30,7 @@ def upload_file():
         print(f"upload file: {file.filename}")
     return jsonify({'message': 'Files successfully uploaded'}), 200
 
+# Route to handle downloading the workspace as a zip file
 @file_transmit_bp.route('/download', methods=['GET'])
 def download_workspace():
     zip_filename = f'workspace_{datetime.now().strftime("%Y%m%d_%H%M%S")}.zip'
@@ -42,3 +45,25 @@ def download_workspace():
 
     zip_buffer.seek(0)
     return send_file(zip_buffer, as_attachment=True, download_name=zip_filename, mimetype='application/zip')
+
+# New route to handle saving graph data as JSON
+@file_transmit_bp.route('/save-graph', methods=['POST'])
+def save_graph():
+    try:
+        # Parse the incoming JSON data
+        graph_data = request.get_json()
+
+        if not graph_data:
+            return jsonify({'error': 'No graph data provided'}), 400
+
+        # Save the JSON data to a file in the workspace
+        graph_file_path = os.path.join(WORKSPACE_FOLDER, 'graph.json')
+        with open(graph_file_path, 'w') as graph_file:
+            json.dump(graph_data, graph_file, indent=2)
+
+        print(f"Graph data saved to {graph_file_path}")
+        return jsonify({'message': 'Graph data successfully saved'}), 200
+
+    except Exception as e:
+        print(f"Error saving graph data: {e}")
+        return jsonify({'error': f"Failed to save graph data: {str(e)}"}), 500

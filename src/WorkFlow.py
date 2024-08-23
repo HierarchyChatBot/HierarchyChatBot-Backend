@@ -3,16 +3,14 @@
 import os
 import json
 import re
-
 from typing import Dict, List, TypedDict, Any, Annotated, Callable, Literal
 import operator
 import inspect
 from NodeData import NodeData
-from langchain_community.chat_models import ChatOllama
-from langchain_community.llms import Ollama
 from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langgraph.graph import StateGraph, END, START
+from llm import get_llm, clip_history
 
 # Tool registry to hold information about tools
 tool_registry: Dict[str, Callable] = {}
@@ -39,11 +37,7 @@ def load_nodes_from_json(filename: str) -> Dict[str, NodeData]:
 def find_nodes_by_type(node_map: Dict[str, NodeData], node_type: str) -> List[NodeData]:
     return [node for node in node_map.values() if node.type == node_type]
 
-# Clip the history to the last 16000 characters
-def clip_history(history: str, max_chars: int = 16000) -> str:
-    if len(history) > max_chars:
-        return history[-max_chars:]
-    return history
+
 
 class PipelineState(TypedDict):
     history: Annotated[str, operator.add]
@@ -224,6 +218,6 @@ def run_workflow_as_server():
         tool_code = f"{tool.description}"
         exec(tool_code, globals())
 
-    llm = Ollama(model="gemma2", format="json", temperature=0)
+    llm = get_llm()
 
     RunWorkFlow(node_map, llm)

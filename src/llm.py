@@ -8,12 +8,15 @@ from langchain_core.output_parsers import StrOutputParser
 
 import json
 
-# Specify the local language model
-local_llm = "gemma2"
+def get_llm():
+    # Specify the local language model
+    local_llm = "gemma2"
 
-# Initialize the ChatOllama model with desired parameters
-llm = ChatOllama(model=local_llm, format="json", temperature=0)
-
+    # Initialize the ChatOllama model with desired parameters
+    return ChatOllama(
+        model=local_llm, 
+        format="json", 
+        temperature=0)
 
 # Clip the history to the last 16000 characters
 def clip_history(history: str, max_chars: int = 16000) -> str:

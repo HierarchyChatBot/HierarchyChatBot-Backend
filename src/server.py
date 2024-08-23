@@ -69,4 +69,4 @@ def check_status():
     return jsonify({"running": running}), 200
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5030)  # Specify the port number here
+    app.run(host="0.0.0.0", debug=True, port=5030)  # Specify the port number here

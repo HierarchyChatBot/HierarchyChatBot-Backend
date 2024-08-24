@@ -36,6 +36,8 @@ def ChatBot(question):
     # Format the prompt with the input variable
     formatted_prompt = prompt.format(question=question)
 
+    llm = get_llm()
+
     llm_chain = prompt | llm | StrOutputParser()
     generation = llm_chain.invoke(formatted_prompt)
     

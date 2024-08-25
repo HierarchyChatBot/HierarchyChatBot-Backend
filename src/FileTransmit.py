@@ -67,3 +67,18 @@ def save_graph():
     except Exception as e:
         print(f"Error saving graph data: {e}")
         return jsonify({'error': f"Failed to save graph data: {str(e)}"}), 500
+
+# New route to handle cleaning the workspace (deleting all files)
+@file_transmit_bp.route('/clean-cache', methods=['POST'])
+def clean_cache():
+    try:
+        # Loop through all files in the workspace and delete them
+        for root, dirs, files in os.walk(WORKSPACE_FOLDER):
+            for file in files:
+                file_path = os.path.join(root, file)
+                os.remove(file_path)
+                print(f"Deleted file: {file_path}")
+        return jsonify({'message': 'Workspace successfully cleaned'}), 200
+    except Exception as e:
+        print(f"Error cleaning workspace: {e}")
+        return jsonify({'error': f"Failed to clean workspace: {str(e)}"}), 500

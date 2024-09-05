@@ -14,7 +14,7 @@ app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
 
 
-llm_model = "gpt4"
+llm_model = "gemma2"
 open_ai_key = ""
 
 @app.route('/process-string', methods=['POST'])

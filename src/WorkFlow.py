@@ -153,6 +153,7 @@ def RunWorkFlow(node_map: Dict[str, NodeData], llm):
             prompt_template=f"""
             history: {{history}}
             {current_node.description}
+            you reply in the json format
             """
             workflow.add_node(
                 current_node.uniq_id, 
@@ -210,14 +211,12 @@ def RunWorkFlow(node_map: Dict[str, NodeData], llm):
     for state in app.stream(initial_state):
         print(state)
 
-def run_workflow_as_server():
+def run_workflow_as_server(llm):
     node_map = load_nodes_from_json("graph.json")
 
     # Register the tool functions dynamically
     for tool in find_nodes_by_type(node_map, "TOOL"):
         tool_code = f"{tool.description}"
         exec(tool_code, globals())
-
-    llm = get_llm()
 
     RunWorkFlow(node_map, llm)

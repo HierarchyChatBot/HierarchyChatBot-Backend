@@ -8,7 +8,7 @@ from langchain_community.chat_models import ChatOllama
 import json
 
 from langchain_core.pydantic_v1 import BaseModel, Field
-from langchain_openai import ChatOpenAI
+from langchain_community.chat_models import ChatOpenAI
 
 import os
 
@@ -19,11 +19,15 @@ def get_llm(llm_model, open_ai_key):
         print("Using gpt-4o-mini")
     else:  # Otherwise, use ChatOllama
         print("Initializing ChatOllama with model: gemma2")
-        local_llm = "gemma2"
-        llm = ChatOllama(model=local_llm, format="json", temperature=0)
+        llm = ChatOllama(
+            model="gemma2",
+            base_url='http://ollama:11434',
+            format="json", 
+            temperature=0)
 
     # Initialize the ChatOllama model with desired parameters
     return llm
+
 
 
 # Clip the history to the last 16000 characters

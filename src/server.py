@@ -9,42 +9,57 @@ from ServerTee import ServerTee
 from thread_handler import ThreadHandler
 from WorkFlow import run_workflow_as_server
 from FileTransmit import file_transmit_bp  # Import the Blueprint
+from datetime import datetime
+import requests
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
 
+# Function to get the current log file path
+def get_log_file_path():
+    log_dir = os.path.join(os.path.dirname(__file__), '../log')  # Ensure the path is correct
+    os.makedirs(log_dir, exist_ok=True)  # Create the log directory if it doesn't exist
+    current_date = datetime.now().strftime('%Y-%m-%d')
+    log_file = f'{current_date}.log'
+    return os.path.join("/app/src/log/", log_file)
 
-llm_model = "gemma2"
-open_ai_key = ""
+server_tee = ServerTee(get_log_file_path())
+thread_handler = ThreadHandler.get_instance()
+
+# Print the log file path for reference
+print(get_log_file_path())
 
 @app.route('/process-string', methods=['POST'])
 def process_string():
     # Get the JSON data from the request
     data = request.json
     input_string = data.get('input_string', '')
+    llm_model = data.get('llm_model', 'gemma2')  # Default to 'gpt' if not provided
+    open_ai_key = data.get('open_ai_key', '')
 
-    # Process the string
+    # Process the string using the dynamically provided llm_model and open_ai_key
     result = ChatBot(get_llm(llm_model, open_ai_key), input_string)
 
     # Return the result as JSON
     return jsonify({'result': result})
 
-app.register_blueprint(file_transmit_bp)  # Register the Blueprint
-
-server_tee = ServerTee("server.log")
-thread_handler = ThreadHandler.get_instance()
-
-def server_func():
-    try:
-        run_workflow_as_server(get_llm(llm_model, open_ai_key))
-    except Exception as e:
-        print(str(e))
-        raise
-
 @app.route('/run', methods=['POST'])
 def run_script():
+    # Get llm_model and open_ai_key from the request body
+    data = request.json
+    llm_model = data.get('llm_model', 'gemma2')  # Default to 'gpt' if not provided
+    open_ai_key = data.get('open_ai_key', '')
+
     if thread_handler.is_running():
         return "Another instance is already running", 409
+
+    def server_func():
+        try:
+            # Run the workflow using the provided llm_model and open_ai_key
+            run_workflow_as_server(get_llm(llm_model, open_ai_key))
+        except Exception as e:
+            print(str(e))
+            raise
 
     def generate():
         try:
@@ -61,6 +76,16 @@ def run_script():
 
 @app.route('/stop', methods=['POST'])
 def stop_script():
+    try:
+        # Example restart request (modify as needed)
+        response = requests.get('http://ollama:11435/restart')
+        if response.status_code == 200:
+            return "Script stopped and restart request sent", 200
+        else:
+            return f"Script stopped, but restart request failed with status code {response.status_code}", 500
+    except requests.RequestException as e:
+        return f"Script stopped, but failed to send restart request: {str(e)}", 500
+
     if thread_handler.is_running():
         thread_handler.force_reset()
         return "Script stopped", 200
@@ -72,30 +97,7 @@ def check_status():
     running = thread_handler.is_running()
     return jsonify({"running": running}), 200
 
-@app.route('/config', methods=['GET'])
-def get_config():
-    # Send the current LLM model and OpenAI key to the frontend
-    return jsonify({
-        'llm_model': llm_model,
-        'open_ai_key': open_ai_key
-    }), 200
-
-@app.route('/config', methods=['POST'])
-def config():
-    global llm_model, open_ai_key  # Declare the global variables
-    
-    # Get the JSON data sent from the frontend
-    config_data = request.get_json()
-
-    # Update the global variables with the new configuration
-    llm_model = config_data.get('llm_model')
-    open_ai_key = config_data.get('open_ai_key')
-
-    # Print the configuration data to the console
-    print("Received Configuration Data: ", config_data)
-
-    # Send a response back to the frontend
-    return jsonify({"message": "Configuration settings saved successfully!"}), 200
+app.register_blueprint(file_transmit_bp)  # Register the Blueprint
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", debug=True, port=5030)  # Specify the port number here

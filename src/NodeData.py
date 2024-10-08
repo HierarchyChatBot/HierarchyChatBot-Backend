@@ -1,7 +1,7 @@
 # NodeData.py
 
 from dataclasses import dataclass, asdict, field
-from typing import List, Optional
+from typing import List, Optional, Dict
 
 @dataclass
 class Serializable:
@@ -17,10 +17,9 @@ class NodeData(Serializable):
     
     # Graph Feature
     uniq_id: str = ""
-    pos_x: float = 0.0
-    pos_y: float = 0.0
-    width: float = 200.0  # Default width
-    height: float = 200.0  # Default height
+    
+    # Store external properties in a dictionary
+    ext: dict = field(default_factory=dict)
 
 
     nexts: List[int] = field(default_factory=list)

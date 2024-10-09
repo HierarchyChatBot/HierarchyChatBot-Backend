@@ -117,6 +117,15 @@ def condition_switch(name:str, state: PipelineState, prompt_template: str, llm) 
 
     return state
 
+def info_add(name: str, state: PipelineState, information: str, llm) -> PipelineState:   
+    print(f"{name} is adding information...")
+
+    # Append the provided information to the history
+    state["history"] += "\n" + information
+    state["history"] = clip_history(state["history"])
+
+    return state
+
 def conditional_edge(state: PipelineState) -> Literal["True", "False"]:
     if state["condition"] in ["True", "true", True]:
         return "True"
@@ -160,6 +169,15 @@ def RunWorkFlow(node_map: Dict[str, NodeData], llm):
                 lambda state, template=prompt_template, llm=llm, name=current_node.name: execute_step(name, state, template, llm)
             )
 
+    # Add INFO nodes
+    info_nodes = find_nodes_by_type(node_map, "INFO")
+    for info_node in info_nodes:
+        # INFO nodes just append predefined information to the state history
+        workflow.add_node(
+            info_node.uniq_id, 
+            lambda state, template=info_node.description, llm=llm, name=info_node.name: info_add(name, state, template, llm)
+        )
+
     # Edges
     # Find all next nodes from start_node
     next_node_ids = start_node.nexts
@@ -170,7 +188,7 @@ def RunWorkFlow(node_map: Dict[str, NodeData], llm):
         workflow.add_edge(START, next_node.uniq_id)   
 
     # Find all next nodes from step_nodes
-    for node in step_nodes:
+    for node in step_nodes + info_nodes:
         next_nodes = [node_map[next_id] for next_id in node.nexts]
         
         for next_node in next_nodes:
